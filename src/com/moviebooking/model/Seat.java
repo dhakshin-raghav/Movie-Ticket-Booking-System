@@ -1,54 +1,33 @@
 package com.moviebooking.model;
 
-import java.util.Objects;
-
 /**
- * Represents an individual physical seat inside a cinema Screen.
+ * Represents an individual seat in a movie theatre screen.
  */
 public class Seat {
-    private final String id;
-    private final String row;
     private final int seatNumber;
-    private final SeatType seatType;
+    private final String seatType; // Silver, Gold, Platinum
+    private final double price;
 
-    public Seat(String id, String row, int seatNumber, SeatType seatType) {
-        this.id = id;
-        this.row = row;
+    public Seat(int seatNumber, String seatType, double price) {
         this.seatNumber = seatNumber;
         this.seatType = seatType;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getRow() {
-        return row;
+        this.price = price;
     }
 
     public int getSeatNumber() {
         return seatNumber;
     }
 
-    public SeatType getSeatType() {
+    public String getSeatType() {
         return seatType;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Seat seat = (Seat) o;
-        return Objects.equals(id, seat.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
+    public double getPrice() {
+        return price;
     }
 
     @Override
     public String toString() {
-        return "[" + id + " (" + seatType + ")]";
+        return "Seat " + seatNumber + " [" + seatType + " - $" + price + "]";
     }
 }

@@ -1,33 +1,22 @@
 package com.moviebooking.model;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
- * Represents a specific screening of a Movie in a Screen at a scheduled time.
+ * Represents a movie screening containing seats and booked seat numbers.
  */
 public class Show {
     private final String id;
     private final Movie movie;
-    private final CinemaHall cinemaHall;
-    private final Screen screen;
-    private final LocalDateTime startTime;
-    private final LocalDateTime endTime;
-    // Track booked seats in a thread-safe manner for this show
-    private final Set<String> bookedSeatIds;
+    private final String showTime;
+    private final List<Seat> seats;
+    private final Set<Integer> bookedSeatNumbers = Collections.synchronizedSet(new HashSet<>());
 
-    public Show(String id, Movie movie, CinemaHall cinemaHall, Screen screen, LocalDateTime startTime, LocalDateTime endTime) {
+    public Show(String id, Movie movie, String showTime, List<Seat> seats) {
         this.id = id;
         this.movie = movie;
-        this.cinemaHall = cinemaHall;
-        this.screen = screen;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.bookedSeatIds = Collections.synchronizedSet(new HashSet<>());
+        this.showTime = showTime;
+        this.seats = seats;
     }
 
     public String getId() {
@@ -38,53 +27,28 @@ public class Show {
         return movie;
     }
 
-    public CinemaHall getCinemaHall() {
-        return cinemaHall;
+    public String getShowTime() {
+        return showTime;
     }
 
-    public Screen getScreen() {
-        return screen;
+    public List<Seat> getSeats() {
+        return seats;
     }
 
-    public LocalDateTime getStartTime() {
-        return startTime;
+    public boolean isSeatBooked(int seatNumber) {
+        return bookedSeatNumbers.contains(seatNumber);
     }
 
-    public LocalDateTime getEndTime() {
-        return endTime;
+    public void markSeatBooked(int seatNumber) {
+        bookedSeatNumbers.add(seatNumber);
     }
 
-    public boolean isSeatBooked(String seatId) {
-        return bookedSeatIds.contains(seatId);
-    }
-
-    public void markSeatBooked(String seatId) {
-        bookedSeatIds.add(seatId);
-    }
-
-    public Set<String> getBookedSeatIds() {
-        synchronized (bookedSeatIds) {
-            return new HashSet<>(bookedSeatIds);
-        }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Show show = (Show) o;
-        return Objects.equals(id, show.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
+    public Set<Integer> getBookedSeatNumbers() {
+        return new HashSet<>(bookedSeatNumbers);
     }
 
     @Override
     public String toString() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        return "Show #" + id + " | " + movie.getTitle() + " | " + cinemaHall.getName() + " - " + screen.getName() +
-                " | " + startTime.format(formatter);
+        return movie.getTitle() + " @ " + showTime;
     }
 }

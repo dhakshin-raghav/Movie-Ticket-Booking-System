@@ -1,112 +1,87 @@
 package com.moviebooking.service;
 
 import com.moviebooking.model.*;
-import com.moviebooking.repository.BookingRepository;
-import com.moviebooking.strategy.payment.PaymentStrategy;
-import com.moviebooking.strategy.pricing.PricingStrategy;
+import com.moviebooking.strategy.PaymentStrategy;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
- * Orchestrates ticket reservation, seat locking, dynamic pricing, and payment confirmation.
+ * Service that orchestrates seat locking, payments, and ticket generation.
  */
 public class BookingService {
 
-    private final BookingRepository bookingRepository;
     private final SeatLockService seatLockService;
-    private final PaymentService paymentService;
+    private final List<Show> shows = new ArrayList<>();
+    private final List<Booking> bookings = new ArrayList<>();
 
-    public BookingService(BookingRepository bookingRepository, 
-                          SeatLockService seatLockService, 
-                          PaymentService paymentService) {
-        this.bookingRepository = bookingRepository;
+    public BookingService(SeatLockService seatLockService) {
         this.seatLockService = seatLockService;
-        this.paymentService = paymentService;
+        initializeSampleData();
     }
 
     /**
-     * Step 1: Temporarily locks seats and creates a PENDING booking.
+     * Attempts to book a seat using thread-safe locking and a chosen Payment Strategy.
      */
-    public Booking createBooking(Show show, List<Seat> seats, User user, PricingStrategy pricingStrategy) {
-        // 1. Lock seats (throws IllegalStateException if already booked or actively locked)
-        seatLockService.lockSeats(show, seats, user);
-
-        // 2. Compute total price using the supplied Pricing Strategy
-        double totalAmount = 0.0;
-        for (Seat seat : seats) {
-            totalAmount += pricingStrategy.calculatePrice(show, seat);
+    public Booking bookTicket(Show show, int seatNumber, User user, PaymentStrategy paymentStrategy) {
+        // Step 1: Attempt to acquire the in-memory seat lock to prevent race conditions
+        boolean locked = seatLockService.lockSeat(show, seatNumber, user.getName());
+        if (!locked) {
+            throw new IllegalStateException("Seat " + seatNumber + " is unavailable or already locked by another user!");
         }
 
-        // 3. Create pending booking
-        String bookingId = "BKG-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        Booking booking = new Booking(bookingId, show, user, seats, totalAmount);
-        bookingRepository.save(booking);
+        try {
+            // Find seat price
+            Seat targetSeat = show.getSeats().stream()
+                    .filter(s -> s.getSeatNumber() == seatNumber)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Seat " + seatNumber + " does not exist."));
 
-        return booking;
-    }
-
-    /**
-     * Step 2: Validates lock validity, processes payment, and confirms the booking.
-     */
-    public Booking confirmBooking(String bookingId, PaymentStrategy paymentStrategy) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Booking ID not found: " + bookingId));
-
-        if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new IllegalStateException("Booking is not in PENDING state: " + booking.getStatus());
-        }
-
-        Show show = booking.getShow();
-        User user = booking.getUser();
-        List<Seat> seats = booking.getSeats();
-
-        // 1. Verify that lock is still valid (not expired)
-        for (Seat seat : seats) {
-            if (!seatLockService.validateLock(show, seat, user)) {
-                booking.expire();
-                seatLockService.unlockSeats(show, seats, user);
-                throw new IllegalStateException("Seat lock expired for seat " + seat.getId() + ". Booking could not be completed.");
+            // Step 2: Process payment via Strategy Pattern
+            boolean paid = paymentStrategy.pay(targetSeat.getPrice());
+            if (!paid) {
+                throw new IllegalStateException("Payment failed!");
             }
-        }
 
-        // 2. Process payment via Strategy
-        Payment payment = paymentService.processPayment(booking.getId(), booking.getTotalAmount(), paymentStrategy);
+            // Step 3: Mark seat permanently booked
+            show.markSeatBooked(seatNumber);
 
-        if (payment.getStatus() == PaymentStatus.SUCCESS) {
-            // 3. Mark seats permanently booked for the show
-            for (Seat seat : seats) {
-                show.markSeatBooked(seat.getId());
-            }
-            // 4. Release temporary locks
-            seatLockService.unlockSeats(show, seats, user);
-            // 5. Confirm booking
-            booking.confirm();
+            // Step 4: Create booking record
+            String bookingId = "BKG-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+            Booking booking = new Booking(bookingId, show, seatNumber, user, targetSeat.getPrice());
+            bookings.add(booking);
+
             return booking;
-        } else {
-            // Payment failed: cancel booking and release locks
-            booking.cancel();
-            seatLockService.unlockSeats(show, seats, user);
-            throw new IllegalStateException("Payment failed. Booking cancelled and seats released.");
+        } finally {
+            // Step 5: Always release the temporary lock once transaction completes
+            seatLockService.unlockSeat(show, seatNumber);
         }
     }
 
-    /**
-     * Convenience method to lock, pay, and book in a single transaction.
-     */
-    public Booking bookTickets(Show show, List<Seat> seats, User user, 
-                               PricingStrategy pricingStrategy, 
-                               PaymentStrategy paymentStrategy) {
-        Booking booking = createBooking(show, seats, user, pricingStrategy);
-        return confirmBooking(booking.getId(), paymentStrategy);
+    public List<Show> getShows() {
+        return shows;
     }
 
-    public Optional<Booking> getBookingById(String bookingId) {
-        return bookingRepository.findById(bookingId);
+    public SeatLockService getSeatLockService() {
+        return seatLockService;
     }
 
-    public List<Booking> getUserBookings(String userId) {
-        return bookingRepository.findByUserId(userId);
+    private void initializeSampleData() {
+        // Create 10 seats for screens
+        List<Seat> screenSeats = new ArrayList<>();
+        for (int i = 1; i <= 4; i++) {
+            screenSeats.add(new Seat(i, "SILVER", 150.0));
+        }
+        for (int i = 5; i <= 8; i++) {
+            screenSeats.add(new Seat(i, "GOLD", 250.0));
+        }
+        for (int i = 9; i <= 10; i++) {
+            screenSeats.add(new Seat(i, "PLATINUM", 400.0));
+        }
+
+        Movie m1 = new Movie("M1", "Interstellar", 169);
+        Movie m2 = new Movie("M2", "Inception", 148);
+
+        shows.add(new Show("S1", m1, "06:30 PM", screenSeats));
+        shows.add(new Show("S2", m2, "09:15 PM", screenSeats));
     }
 }

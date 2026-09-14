@@ -1,21 +1,17 @@
 package com.moviebooking.model;
 
 /**
- * Represents a Movie being exhibited across cinema halls.
+ * Represents a Movie with basic details.
  */
 public class Movie {
     private final String id;
     private final String title;
-    private final int durationInMinutes;
-    private final String genre;
-    private final String language;
+    private final int durationMinutes;
 
-    public Movie(String id, String title, int durationInMinutes, String genre, String language) {
+    public Movie(String id, String title, int durationMinutes) {
         this.id = id;
         this.title = title;
-        this.durationInMinutes = durationInMinutes;
-        this.genre = genre;
-        this.language = language;
+        this.durationMinutes = durationMinutes;
     }
 
     public String getId() {
@@ -26,20 +22,12 @@ public class Movie {
         return title;
     }
 
-    public int getDurationInMinutes() {
-        return durationInMinutes;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public String getLanguage() {
-        return language;
+    public int getDurationMinutes() {
+        return durationMinutes;
     }
 
     @Override
     public String toString() {
-        return title + " [" + genre + " | " + language + " | " + durationInMinutes + " mins]";
+        return title + " (" + durationMinutes + " mins)";
     }
 }

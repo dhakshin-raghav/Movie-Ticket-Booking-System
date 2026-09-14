@@ -1,18 +1,15 @@
 package com.moviebooking.controller;
 
 import com.moviebooking.model.Booking;
-import com.moviebooking.model.Seat;
 import com.moviebooking.model.Show;
 import com.moviebooking.model.User;
 import com.moviebooking.service.BookingService;
-import com.moviebooking.strategy.payment.PaymentStrategy;
-import com.moviebooking.strategy.pricing.PricingStrategy;
+import com.moviebooking.strategy.PaymentStrategy;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Controller exposing booking workflows.
+ * Controller layer exposing simplified APIs to the console UI.
  */
 public class BookingController {
 
@@ -22,25 +19,11 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-    public Booking bookTickets(Show show, List<Seat> seats, User user, 
-                               PricingStrategy pricingStrategy, 
-                               PaymentStrategy paymentStrategy) {
-        return bookingService.bookTickets(show, seats, user, pricingStrategy, paymentStrategy);
+    public List<Show> getAllShows() {
+        return bookingService.getShows();
     }
 
-    public Booking createBooking(Show show, List<Seat> seats, User user, PricingStrategy pricingStrategy) {
-        return bookingService.createBooking(show, seats, user, pricingStrategy);
-    }
-
-    public Booking confirmBooking(String bookingId, PaymentStrategy paymentStrategy) {
-        return bookingService.confirmBooking(bookingId, paymentStrategy);
-    }
-
-    public Optional<Booking> getBooking(String bookingId) {
-        return bookingService.getBookingById(bookingId);
-    }
-
-    public List<Booking> getUserBookings(String userId) {
-        return bookingService.getUserBookings(userId);
+    public Booking bookTicket(Show show, int seatNumber, User user, PaymentStrategy paymentStrategy) {
+        return bookingService.bookTicket(show, seatNumber, user, paymentStrategy);
     }
 }
