@@ -32,4 +32,18 @@ public class ShowRepository {
                 .filter(show -> show.getMovie().getId().equals(movieId))
                 .collect(Collectors.toList());
     }
+
+    public List<Show> findByCityAndMovieId(com.moviebooking.model.City city, String movieId) {
+        return shows.values().stream()
+                .filter(show -> show.getCinemaHall().getCity() == city && show.getMovie().getId().equals(movieId))
+                .collect(Collectors.toList());
+    }
+
+    public List<com.moviebooking.model.Movie> findMoviesByCity(com.moviebooking.model.City city) {
+        return shows.values().stream()
+                .filter(show -> show.getCinemaHall().getCity() == city)
+                .map(Show::getMovie)
+                .distinct()
+                .collect(Collectors.toList());
+    }
 }

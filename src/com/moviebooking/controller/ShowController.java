@@ -40,4 +40,12 @@ public class ShowController {
     public List<Seat> getAvailableSeats(Show show) {
         return showService.getAvailableSeats(show);
     }
+
+    public List<Show> getShowsByCityAndMovie(com.moviebooking.model.City city, String movieId) {
+        return showService.getShowsByCityAndMovie(city, movieId);
+    }
+
+    public List<Movie> getMoviesByCity(com.moviebooking.model.City city) {
+        return showService.getMoviesByCity(city);
+    }
 }

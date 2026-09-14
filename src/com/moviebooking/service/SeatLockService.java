@@ -167,4 +167,23 @@ public class SeatLockService {
 
         return availableSeats;
     }
+
+    /**
+     * Determines the real-time status of an individual seat for a show.
+     */
+    public com.moviebooking.model.SeatStatus getSeatStatus(Show show, Seat seat) {
+        if (show.isSeatBooked(seat.getId())) {
+            return com.moviebooking.model.SeatStatus.BOOKED;
+        }
+        String lockKey = buildLockKey(show.getId(), seat.getId());
+        SeatLock lock = activeLocks.get(lockKey);
+        if (lock != null) {
+            if (lock.isExpired()) {
+                activeLocks.remove(lockKey);
+                return com.moviebooking.model.SeatStatus.AVAILABLE;
+            }
+            return com.moviebooking.model.SeatStatus.LOCKED;
+        }
+        return com.moviebooking.model.SeatStatus.AVAILABLE;
+    }
 }

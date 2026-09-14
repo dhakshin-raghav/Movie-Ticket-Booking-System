@@ -10,10 +10,10 @@ import java.util.List;
 public class CinemaHall {
     private final String id;
     private final String name;
-    private final String city;
+    private final City city;
     private final List<Screen> screens;
 
-    public CinemaHall(String id, String name, String city) {
+    public CinemaHall(String id, String name, City city) {
         this.id = id;
         this.name = name;
         this.city = city;
@@ -32,7 +32,7 @@ public class CinemaHall {
         return name;
     }
 
-    public String getCity() {
+    public City getCity() {
         return city;
     }
 

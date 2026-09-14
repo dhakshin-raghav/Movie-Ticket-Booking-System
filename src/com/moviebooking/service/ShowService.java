@@ -38,4 +38,12 @@ public class ShowService {
     public List<Seat> getAvailableSeats(Show show) {
         return seatLockService.getAvailableSeats(show);
     }
+
+    public List<Show> getShowsByCityAndMovie(com.moviebooking.model.City city, String movieId) {
+        return showRepository.findByCityAndMovieId(city, movieId);
+    }
+
+    public List<com.moviebooking.model.Movie> getMoviesByCity(com.moviebooking.model.City city) {
+        return showRepository.findMoviesByCity(city);
+    }
 }
