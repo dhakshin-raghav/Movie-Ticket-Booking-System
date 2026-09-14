@@ -1,6 +1,6 @@
 # 🎬 Movie Ticket Booking System - Low Level Design (LLD)
 
-A clean, beginner-friendly **Movie Ticket Booking System** in pure Java designed to showcase **Object-Oriented Programming (OOP)**, **Concurrency / In-Memory Seat Locking**, and the **Strategy Pattern**.
+A clean **Movie Ticket Booking System** in pure Java designed to showcase **Object-Oriented Programming (OOP)**, **Concurrency / In-Memory Seat Locking**, and the **Strategy Pattern**.
 
 ---
 
